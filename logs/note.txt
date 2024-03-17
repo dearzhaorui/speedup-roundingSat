@@ -1,12 +1,12 @@
 The `logs` directory containts three example logs that were used in experiments. Each logs include the following main information:
-Decisions, lemmas together with the corresponding backjump level, the restart time and the cleanup time including the lemma identifers to be removed in cleanup. 
+Decisions, lemmas together with the corresponding backjump level, the restart time and the cleanup time including the lemma identifers to be removed in every cleanup. 
 
 In addition to the above necessary information, the log file also contains additional information related to each of them for checking the correctness during the solving, more concretely, 
 
 `Decisions`: #conflicts, #trailSize, dl
-`Lemmas`:    identifier, #decisions, #conflicts, lemma types, sizes, LBDs, Activites, conflicting level, backjump level, 
-`Cleanup`:   #decisions, #conflicts, lemma identifiers
+`Lemmas`:    identifier, #decisions, #conflicts, lemma types, sizes, LBDs, Activites, conflicting level, backjump level.
+`Cleanup`:   #decisions, #conflicts, lemma identifiers.
 `Restart`:   #decisions, #conflicts.
 `Final stats`: status, best solution, #total decisions/conflicts/cleanups/restarts...
 
-With these information, we can precisely evaluate the performance of different propagation behaviours by avoiding the impact of different search spaces.
+With these information, we can precisely evaluate the performance of different propagation routines that explore the search spaces.
