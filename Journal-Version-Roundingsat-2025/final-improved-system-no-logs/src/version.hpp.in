@@ -1,0 +1,7 @@
+#ifndef _RS_VERSION_HPP_
+#define _RS_VERSION_HPP_
+
+#cmakedefine GIT_COMMIT_HASH "@GIT_COMMIT_HASH@"
+#cmakedefine GIT_BRANCH "@GIT_BRANCH@"
+
+#endif
