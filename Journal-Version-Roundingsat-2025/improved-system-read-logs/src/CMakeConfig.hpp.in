@@ -1,0 +1,11 @@
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+
+#ifndef _RS_CMAKE_CONFIG_HPP_
+#define _RS_CMAKE_CONFIG_HPP_
+
+#cmakedefine IOSTREAMS_WITH_ZLIB
+#cmakedefine IOSTREAMS_WITH_BZIP2
+#cmakedefine IOSTREAMS_WITH_LZMA
+#cmakedefine IOSTREAMS_WITH_ZSTD
+
+#endif
