@@ -1,0 +1,10 @@
+*/*/465.txt
+*/*/*.log
+*/*/makefile
+*/*/roundingsat
+*/*/CMakeCache.txt
+*/*/cmake_install.cmake
+*/*/CMakeFiles
+*/*/cmake
+*/*/build/*
+*/*/build_debug/*
