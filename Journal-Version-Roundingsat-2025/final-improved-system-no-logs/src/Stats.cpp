@@ -38,7 +38,7 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 namespace rs {
 
   void Stats::print() const {
-    printf("c cpu time %g s\n", getTime());
+    printf("\nc cpu time %g s\n", getTime());
     printf("c deterministic time %lld %.2e\n", getDetTime(), (double)getDetTime());
     printf("c optimization time %g s\n", getRunTime() - getSolveTime());
     printf("c total solve time %g s\n", getSolveTime());
@@ -75,7 +75,7 @@ namespace rs {
     else
       printf("c learned average constraint degree inf\n");
   
-    printf("c watched  constraints %lld ,( %.2f%s ) \n", NWATCHED, (double)NWATCHED / (NWATCHED + NCOUNTING)*100, "%");
+    printf("c watched constraints %lld ,( %.2f%s ) \n", NWATCHED, (double)NWATCHED / (NWATCHED + NCOUNTING)*100, "%");
     printf("c counting constraints %lld ,( %.2f%s ) \n", NCOUNTING, (double)NCOUNTING / (NWATCHED + NCOUNTING)*100, "%");
     printf("c watched  CF 32, 64, 128, Arb: %lld , %lld , %lld , %lld\n", NWATCHED32, NWATCHED64, NWATCHED128, NWATCHEDARB);
     printf("c counting CF 32, 64, 128, Arb: %lld , %lld , %lld , %lld\n", NCOUNTING32, NCOUNTING64, NCOUNTING128, NCOUNTINGARB);

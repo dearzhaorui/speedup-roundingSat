@@ -112,15 +112,15 @@ CRef ConstrExp<SMALL, LARGE>::toConstr(ConstraintAllocator& ca, bool locked, ID 
     new (ca.alloc<Cardinality>(vars.size())) Cardinality(this, locked, id);
   } else {
     LARGE watchSum = -degree;
-
-    // Original prediction method: best --prop-counting=0.9
-    // Our new prediction method: best --prop-counting=0.6
+        
+     ////Our new prediction method: best --prop-counting=0.6
     unsigned int i = vars.size()-1;  // sorted per decreasing coefs, we watch from right to left side, the smallest coef
     for (; i > 0 && watchSum < 0; --i) watchSum += aux::abs(coefs[vars[i]]);
     unsigned int minWatches = vars.size() - i;
     bool useCounting =
         options.propCounting.get() == 1 || options.propCounting.get() > (1 - minWatches / (double)vars.size());
     stats.SUMWATCHPERC += minWatches / (double)vars.size();
+    
     if (maxCoef <= limit32) {
       if (useCounting) {
         ++stats.NCOUNTING32;

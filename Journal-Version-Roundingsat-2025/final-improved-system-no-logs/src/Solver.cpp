@@ -877,13 +877,14 @@ inline void Solver::swapErase_watches(std::vector<Watch>& indexable, size_t inde
 
 // We assume in the garbage collection method that reduceDB() is the
 // only place where constraints are removed from memory.
+
 void Solver::reduceDB() {
   assert(slackMCoefV.size() == constraints.size());
-  assert(slackMCoefV.size() == (size_t)iID);
+  assert((int)slackMCoefV.size() == iID);
   std::vector<std::pair<CRef, int>> learnts;
   learnts.reserve(constraints.size() / 2);
 
-  int k = -1;
+  int k = -1; 
   size_t totalLearnts = 0;
   size_t promisingLearnts = 0;
   for (CRef& cr : constraints) {
@@ -912,48 +913,70 @@ void Solver::reduceDB() {
     return ca[x.first].lbd() > ca[y.first].lbd() || (ca[x.first].lbd() == ca[y.first].lbd() && ca[x.first].act < ca[y.first].act);
   });
   for (size_t i = 0; i < std::min(totalLearnts / 2, learnts.size()); ++i) removeConstraintWithIID(learnts[i].second);
-
-  // rebuild watch lists
-  for (Lit l = -n; l <= n; ++l) {
-    adj[l].clear();
-  }
-  backjumpTo(0);
-
-  std::vector<ID> logDeletions;
+  
   std::vector<int> oldId2NewId(iID, -1);
   iID = 0;
+  for (size_t k = 0; k < constraints.size(); ++k) {
+    if (!slackMCoefV[k].removed) {
+      oldId2NewId[k] = iID++;
+    }
+  }
+  
+#define update_iID(iid) iid = oldId2NewId[iid];
+  for (auto& p : lowerUpperBoundCtrIID) { assert(p.second >= 0); update_iID(p.second); }
+#undef update_iID
+
+  std::vector<ID> logDeletions;
   size_t i = 0;
   size_t j = 0;
   for (; i < constraints.size(); ++i) {
     if (slackMCoefV[i].removed) {
+      slackMCoefV[i].clear(); // explicitly destory the ptr 
+      assert(oldId2NewId[i] == -1);
       Constr& c = ca[constraints[i]];
       ca.wasted += c.getMemSize();
+      if (logger and c.getOrigin() == Origin::LEARNED and c.size() > 1) {
+        logger->delRef(c.id);
+      }
       c.freeUp();  // free up indirectly owned memory before implicitly deleting c during garbage collect
     } else {
-      oldId2NewId[i] = iID++;
-      constraints[j++] = constraints[i];
+      assert(oldId2NewId[i] > -1);
+      constraints[j] = constraints[i]; 
+      BigVal orig = slackMCoefV[i].slkMC();
+      slackMCoefV[j++] = std::move(slackMCoefV[i]);
+      assert(orig == slackMCoefV[j-1].slkMC());
+      assert(i == j-1 or slackMCoefV[i].isVal);
     }
   }
   if (logger) logger->gc();
   assert((int)j == iID);
-  constraints.resize(j);
-  slackMCoefV.clear();
-  
-#define update_iID(iid) iid = oldId2NewId[iid];
-  for (auto& p : lowerUpperBoundCtrIID) { assert(p.second != -1); update_iID(p.second); }
-#undef update_iID
-
+  for(; j < i; ++j) assert(slackMCoefV[j].isVal);
+  constraints.resize(iID);
+  slackMCoefV.resize(iID);
   if ((double)ca.wasted / (double)ca.at > 0.2) garbage_collect();
   
-  iID = 0;
-  for (i = 0; i < constraints.size(); ++i) {
-    Constr& C = ca[constraints[i]];
-    C.resetWatches(); // for unwatching all literals in watched PB constraints
-    C.initializeWatches(constraints[i], *this);
-    ++iID;
-  }
-  assert(iID == (int)slackMCoefV.size());
+  // rebuild watch lists
+  for (Lit l = -n; l <= n; ++l) {
+    for (int i = 0; i < (int)adj[l].size(); ++i) {
+      if (oldId2NewId[adj[l][i].iID] == -1) {swapErase_watches(adj[l], i--);} 
+      else {
+        adj[l][i].iID = oldId2NewId[adj[l][i].iID];
+        assert(adj[l][i].iID > -1);
+        Watch& w = adj[l][i];
+        if (!w.isCoef()) { // the pointer to the bigint coef will change after garbage collection
+          assert(w.isPB());
+          Constr& C = ca[constraints[w.iID]];
+          long long cptr = C.getNewCoefPtr(w.idx-INF);
+          assert(cptr != 0);
+          w.setPtr(cptr);
+        }
+        
+      }
+    }
+  }  
 }
+
+
 
 // ---------------------------------------------------------------------
 // Solving

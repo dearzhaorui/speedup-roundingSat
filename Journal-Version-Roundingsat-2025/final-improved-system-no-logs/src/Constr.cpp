@@ -60,6 +60,7 @@ void Clause::initializeWatches(CRef cr, Solver& solver) {
   unsigned int length = size();
   assert(length >= 1);
   if (length == 1) {
+    if (isTrue(Level, data[0])) return;
     assert(solver.decisionLevel() == 0);
     assert(isCorrectlyPropagating(solver, 0));
     solver.propagate(data[0], cr);
@@ -181,9 +182,8 @@ void Cardinality::initializeWatches(CRef cr, Solver& solver) {
   if (degr >= length) {
     assert(solver.decisionLevel() == 0);
     for (unsigned int i = 0; i < length; ++i) {
-      assert(isUnknown(Pos, data[i]));
-      assert(isCorrectlyPropagating(solver, i));
-      solver.propagate(data[i], cr);
+      if (isUnknown(Pos, data[i]))
+        solver.propagate(data[i], cr);
     }
     return;
   }
@@ -407,15 +407,14 @@ void Watched<CF, DG>::initializeWatches(CRef cr, Solver& solver) {
   DG watchslack = -degr;
   unsigned int length = size();
   const CF lrgstCf = aux::abs(data[0].c);
-  //for (unsigned int i = 0; i < length && watchslack < lrgstCf; ++i) {
-  for (int i = length-1; i >= 0 && watchslack < lrgstCf; --i) {
+  for (unsigned int i = 0; i < length && watchslack < lrgstCf; ++i) {
     Lit l = data[i].l;
     if (!isFalse(Level, l) || Pos[toVar(l)] >= qhead) {
       assert(data[i].c > 0);
       watchslack += data[i].c;
       assert(data[i].c <= limit64);
       data[i].c = -data[i].c;
-      adj[l].emplace_back(solver.iID, i + INF, data[i].c);  // for watched PB, we only need to know the idx in UP, the negative coef means using watch. BUT in backjump, we still need the coef
+      adj[l].emplace_back(solver.iID, i + INF, data[i].c);
     }
   }
   assert(watchslack >= 0);
@@ -471,7 +470,6 @@ WatchStatus Watched<CF, DG>::checkForPropagation(CRef cr, int& idx, Lit p, Solve
 
   DG snfMC = static_cast<DG>(smc.slackMC);
   assert(c < 0);
-  //snfMC += c;  // comment: snfMC has been already decreased by c, no need to do it here
 
   if (!options.propSup || snfMC - c >= 0) {  // look for new watches if previously, slack was at least lrgstCf
     unsigned int start_widx = nextWatchIdx;
@@ -751,7 +749,7 @@ void WatchedSafe<CF, DG>::initializeWatches(CRef cr, Solver& solver) {
   DG wslk = -*degr;
   unsigned int length = size();
   const CF lrgstCf = aux::abs(terms[0].c);
-  for (int i = length-1; i >= 0 && wslk < lrgstCf; --i) {
+  for (unsigned int i = 0; i < length && wslk < lrgstCf; ++i) {
     Lit l = terms[i].l;
     if (!isFalse(Level, l) || Pos[toVar(l)] >= qhead) {
       assert(terms[i].c > 0);
@@ -824,7 +822,6 @@ WatchStatus WatchedSafe<CF, DG>::checkForPropagation(CRef cr, int& idx, Lit p, S
   assert(!smc.isVal);
   DG& snfMC = smc.dereference<DG>();
   assert(c < 0);
-  //snfMC += c;  // comment: snfMC has been already decreased by c, no need to do it here
 
   if (!options.propSup || snfMC - c >= 0) {  // look for new watches if previously, slack was at least lrgstCf
     unsigned int start_widx = nextWatchIdx;
