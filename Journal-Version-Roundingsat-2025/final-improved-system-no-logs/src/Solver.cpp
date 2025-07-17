@@ -942,7 +942,7 @@ void Solver::reduceDB() {
     } else {
       assert(oldId2NewId[i] > -1);
       constraints[j] = constraints[i]; 
-      BigVal orig = slackMCoefV[i].slkMC();
+      [[maybe_unused]] BigVal orig = slackMCoefV[i].slkMC();
       slackMCoefV[j++] = std::move(slackMCoefV[i]);
       assert(orig == slackMCoefV[j-1].slkMC());
       assert(i == j-1 or slackMCoefV[i].isVal);
@@ -955,7 +955,7 @@ void Solver::reduceDB() {
   slackMCoefV.resize(iID);
   if ((double)ca.wasted / (double)ca.at > 0.2) garbage_collect();
   
-  // rebuild watch lists
+  // update watch lists
   for (Lit l = -n; l <= n; ++l) {
     for (int i = 0; i < (int)adj[l].size(); ++i) {
       if (oldId2NewId[adj[l][i].iID] == -1) {swapErase_watches(adj[l], i--);} 

@@ -414,7 +414,7 @@ void Watched<CF, DG>::initializeWatches(CRef cr, Solver& solver) {
       watchslack += data[i].c;
       assert(data[i].c <= limit64);
       data[i].c = -data[i].c;
-      adj[l].emplace_back(solver.iID, i + INF, data[i].c);  // for watched PB, we only need to know the idx in UP, the negative coef means using watch. BUT in backjump, we still need the coef
+      adj[l].emplace_back(solver.iID, i + INF, data[i].c);
     }
   }
   assert(watchslack >= 0);

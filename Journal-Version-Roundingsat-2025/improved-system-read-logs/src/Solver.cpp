@@ -900,17 +900,6 @@ void Solver::reduceDB_read() {
     if (!slackMCoefV[k].removed) oldId2NewId[k] = iID++;
     ++k;
   }
-  
-  // update watch lists
-  for (Lit l = -n; l <= n; ++l) {
-    for (int i = 0; i < (int)adj[l].size(); ++i) {
-      if (slackMCoefV[adj[l][i].iID].removed) {swapErase_watches(adj[l], i--);} // for clauses and cards, this iID is also needed, it's for their deletion info here
-      else {
-        adj[l][i].iID = oldId2NewId[adj[l][i].iID];
-        assert(adj[l][i].iID > -1);
-      }
-    }
-  }
 
 #define update_iID(iid) iid = oldId2NewId[iid];
   for (auto& p : lowerUpperBoundCtrIID) {assert(p.second != -1); update_iID(p.second); }
@@ -926,9 +915,12 @@ void Solver::reduceDB_read() {
       ca.wasted += c.getMemSize();
       c.freeUp();  // free up indirectly owned memory before implicitly deleting c during garbage collect
     } else {
-      assert(oldId2NewId[i] >= 0);
-      constraints[j] = constraints[i];
-      slackMCoefV[j] = slackMCoefV[i];
+      assert(oldId2NewId[i] > -1);
+      constraints[j] = constraints[i]; 
+      [[maybe_unused]] BigVal orig = slackMCoefV[i].slkMC();
+      slackMCoefV[j] = std::move(slackMCoefV[i]);
+      assert(orig == slackMCoefV[j].slkMC());
+      assert(i == j or slackMCoefV[i].isVal);
       ++j;
     }
   }
@@ -940,6 +932,26 @@ void Solver::reduceDB_read() {
   
   if (nextCleanupInfo.GC) garbage_collect();
   for(ID id : removedIDs) rm[id] = false;
+   
+  // update watch lists
+  for (Lit l = -n; l <= n; ++l) {
+    for (int i = 0; i < (int)adj[l].size(); ++i) {
+      if (oldId2NewId[adj[l][i].iID] == -1) {swapErase_watches(adj[l], i--);} 
+      else {
+        adj[l][i].iID = oldId2NewId[adj[l][i].iID];
+        assert(adj[l][i].iID > -1);
+        Watch& w = adj[l][i];
+        if (!w.isCoef()) { // the pointer to the bigint coef will change after garbage collection
+          assert(w.isPB());
+          Constr& C = ca[constraints[w.iID]];
+          long long cptr = C.getNewCoefPtr(w.idx-INF);
+          assert(cptr != 0);
+          w.setPtr(cptr);
+        }
+        
+      }
+    }
+  }
 }
 
 // ---------------------------------------------------------------------
@@ -1137,7 +1149,7 @@ SolveState Solver::readDecision(const Ce32& input, std::vector<CeSuper>& result)
 only for avoiding the problem when it's called for solving satisfiability problems
 */
 SolveAnswer Solver::solve() {
-  std::cout << "Indenpendently running RoundingSat is not supported in this system!!" << std::endl;
+  std::cout << "Indenpendently running RoundingSat with no log file is not supported in this system!!" << std::endl;
   exit(0);
   return {SolveState::INCONSISTENT, {cePools.take32()}, lastSol};
 }
